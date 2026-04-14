@@ -6,23 +6,10 @@ using Ollama and OpenRouter backends.
 import requests
 import base64
 import io
-import os
-import sys
 from PIL import Image
 from modules import shared
 
-# Sibling import from the same directory (extension root)
-try:
-    import llm_service
-    from llm_service import llm_service
-except ImportError:
-    # Fallback for when scripts/main.py hasn't added root to path yet
-    # though tagging_service is usually imported by main.py
-    scripts_dir = os.path.dirname(__file__)
-    if scripts_dir not in sys.path:
-        sys.path.append(scripts_dir)
-    import llm_service
-    from llm_service import llm_service
+from llm_service import llm_service
 
 class TaggingService:
     """
@@ -151,5 +138,80 @@ class TaggingService:
         except Exception as e:
             print(f"[ScribeNEO] Critical Vision Error: {str(e)}")
             return f"OpenRouter Tagging Error: {str(e)}"
+
+    def interrogate_huggingface(self, image, model=None, system_prompt=None):
+        """
+        Interrogates an image using the Hugging Face Inference API (Router).
+        Compatible with OpenAI VLM message format.
+        """
+        config = llm_service.get_config()
+        # Default vision-capable model for HF if none provided
+        target_model = model or "meta-llama/Llama-3.2-11B-Vision-Instruct"
+        
+        if not config["hf_token"]:
+            return "Error: Hugging Face Token not set."
+
+        b64_image = self.encode_image(image)
+        if not b64_image:
+            return "No image provided."
+
+        headers = {
+            "Authorization": f"Bearer {config['hf_token']}",
+            "Content-Type": "application/json"
+        }
+        
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+            
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Describe this image for a Stable Diffusion prompt. Output only the prompt tags and description."},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{b64_image}"
+                    }
+                }
+            ]
+        })
+
+        data = {
+            "model": target_model,
+            "messages": messages,
+            "stream": False
+        }
+
+        # Uses the router endpoint defined in config
+        endpoint = f"{config['hf_endpoint'].rstrip('/')}/chat/completions"
+
+        try:
+            response = requests.post(endpoint, headers=headers, json=data, timeout=self.timeout)
+            if response.status_code != 200:
+                print(f"[ScribeNEO] HF Vision API Error: {response.text}")
+            response.raise_for_status()
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        except requests.exceptions.HTTPError as e:
+            return f"HF Vision HTTP Error ({e.response.status_code}): {e.response.text}"
+        except requests.exceptions.Timeout:
+            return "HF Vision Error: Request timed out."
+        except Exception as e:
+            print(f"[ScribeNEO] HF Critical Vision Error: {str(e)}")
+            return f"Hugging Face Tagging Error: {str(e)}"
+
+    def interrogate(self, image, provider="openrouter", model=None, system_prompt=None):
+        """
+        Routes the interrogation request to the specified provider.
+        """
+        if provider == "openrouter":
+            return self.interrogate_openrouter(image, model, system_prompt)
+        elif provider == "ollama":
+            return self.interrogate_ollama(image, model)
+        elif provider == "huggingface":
+            return self.interrogate_huggingface(image, model, system_prompt)
+        
+        return f"Error: Unknown vision provider '{provider}'"
 
 tagging_service = TaggingService()

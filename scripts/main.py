@@ -7,9 +7,6 @@ import os
 import sys
 import json
 import gradio as gr
-import base64
-import io
-from PIL import Image
 
 # Add the extension root directory to sys.path to allow direct imports
 scripts_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,9 +16,7 @@ if ext_root not in sys.path:
 
 from modules import scripts, script_callbacks, shared
 
-import llm_service
 from llm_service import llm_service
-import tagging_service
 from tagging_service import tagging_service
 
 # Path to data files
@@ -29,7 +24,6 @@ from config_service import load_config, save_config
 base_dir = scripts.basedir()
 personas_path = os.path.join(base_dir, "personas.json")
 
-# Config helpers removed - now imported from ps_config
 
 def load_personas():
     if os.path.exists(personas_path):
@@ -52,12 +46,12 @@ def save_personas(personas):
 
 def build_enhancer_module(persona_names, last_enhancer, last_persona="None"):
     with gr.Column(scale=1, elem_classes="scribeneo-module"):
-        gr.Markdown("### ✨ SCRIBE PROMPT ENHANCER")
+        gr.Markdown("### ✨ PROMPT ENHANCER")
         
         with gr.Row(elem_classes="scribeneo-engine-row"):
-            enhancer_model = gr.Dropdown(choices=[last_enhancer] if last_enhancer else [], value=last_enhancer, label="AI Engine", scale=3, allow_custom_value=True)
+            enhancer_model = gr.Dropdown(choices=[last_enhancer] if last_enhancer else [], value=last_enhancer, label="AI Engine", scale=3, allow_custom_value=True, elem_id="scribeneo_enhancer_model")
             refresh_enhancer = gr.Button("🔄", elem_classes="scribeneo-refresh-btn", scale=0)
-            enhancer_persona = gr.Dropdown(choices=persona_names, value=last_persona, label="Active Persona", scale=2)
+            enhancer_persona = gr.Dropdown(choices=persona_names, value=last_persona, label="Active Persona", scale=2, elem_id="scribeneo_enhancer_persona")
         
         raw_input = gr.Textbox(label="Initial Prompt", lines=5, placeholder="Type keywords or a simple idea...", elem_id="scribeneo_main_input")
         with gr.Row(elem_classes="scribeneo-action-bar"):
@@ -88,9 +82,9 @@ def build_vision_module(persona_names, last_vision, last_persona="None"):
         gr.Markdown("### 👁️ VISION TOOLSET")
         
         with gr.Row(elem_classes="scribeneo-engine-row"):
-            caption_model = gr.Dropdown(choices=[last_vision] if last_vision else [], value=last_vision, label="Vision Engine", scale=3, allow_custom_value=True)
+            caption_model = gr.Dropdown(choices=[last_vision] if last_vision else [], value=last_vision, label="Vision Engine", scale=3, allow_custom_value=True, elem_id="scribeneo_vision_model")
             refresh_vision = gr.Button("🔄", elem_classes="scribeneo-refresh-btn", scale=0)
-            caption_persona = gr.Dropdown(choices=persona_names, value=last_persona, label="Vision Persona", scale=2)
+            caption_persona = gr.Dropdown(choices=persona_names, value=last_persona, label="Vision Persona", scale=2, elem_id="scribeneo_vision_persona")
         
         img_input = gr.Image(label="Source Image", type="pil", elem_classes="scribeneo-image-container")
         with gr.Row(elem_classes="scribeneo-action-bar"):
@@ -116,7 +110,7 @@ def build_config_hub(provider, init_key, init_end):
         with gr.Row():
             with gr.Column(scale=1):
                 gr.Markdown("#### ⚙️ Service Settings")
-                provider_input = gr.Dropdown(choices=["OpenRouter", "Hugging Face", "Ollama"], value=provider, label="Active Service Provider")
+                provider_input = gr.Dropdown(choices=["OpenRouter", "Hugging Face", "Ollama"], value=provider, label="Active Service Provider", elem_id="scribeneo_provider_input")
                 
                 with gr.Row(elem_classes="scribeneo-config-row"):
                     api_key_input = gr.Textbox(label="API Key / Token", value=init_key, type="password", scale=4)
@@ -166,7 +160,7 @@ def on_ui_tabs():
     persona_names = ["None"] + [p['name'] for p in personas]
     
     conf = load_config()
-    provider = conf.get("provider", "OpenRouter")
+    provider = "OpenRouter"
     
     # Determine initial key/endpoint based on provider
     init_key = ""
@@ -179,22 +173,18 @@ def on_ui_tabs():
         init_end = conf["huggingface"]["endpoint"]
     elif provider == "Ollama":
         init_end = conf["ollama"]["endpoint"]
-    
-    last_enhancer = conf.get("last_enhancer_model", "")
-    last_vision = conf.get("last_vision_model", "")
-    last_enhancer_persona = conf.get("last_enhancer_persona", "None")
-    last_vision_persona = conf.get("last_vision_persona", "None")
 
+ 
     with gr.Blocks(analytics_enabled=False, elem_id="scribe_neo_container") as scribeneo_tab:
         # --- MAIN WORKSPACE ---
         with gr.Row():
             (enhancer_model, refresh_enhancer, enhancer_persona, raw_input, enhance_btn, 
              stop_enhance_btn, copy_enhance_btn, clear_enhance_btn, enhanced_output, 
-             send_txt2img, send_img2img) = build_enhancer_module(persona_names, last_enhancer, last_enhancer_persona)
+             send_txt2img, send_img2img) = build_enhancer_module(persona_names, "", "None")
 
             (caption_model, refresh_vision, caption_persona, img_input, tag_btn, 
              stop_vision_btn, copy_vision_btn, clear_vision_btn, tag_output, 
-             vis_to_txt2img, vis_to_img2img, append_btn, replace_btn) = build_vision_module(persona_names, last_vision, last_vision_persona)
+             vis_to_txt2img, vis_to_img2img, append_btn, replace_btn) = build_vision_module(persona_names, "", "None")
 
         # --- CONFIGURATION HUB ---
         (provider_input, api_key_input, reveal_api_btn, endpoint_input, 
@@ -214,6 +204,8 @@ def on_ui_tabs():
         
         reveal_api_btn.click(fn=toggle_reveal, inputs=[reveal_state], outputs=[reveal_state, api_key_input, reveal_api_btn])
 
+        provider_switched = [False]
+
         def update_hub_fields(provider):
             conf = load_config()
             key_val = ""
@@ -228,6 +220,10 @@ def on_ui_tabs():
                 key_val = ""
                 end_val = conf["ollama"]["endpoint"]
             
+            if provider_switched[0]:
+                gr.Info(f"Switched to {provider}. Hit 🔄 to refresh your model lists.")
+            provider_switched[0] = True
+
             return gr.update(value=key_val), gr.update(value=end_val, interactive=False)
 
         provider_input.change(fn=update_hub_fields, inputs=[provider_input], outputs=[api_key_input, endpoint_input])
@@ -267,7 +263,6 @@ def on_ui_tabs():
 
         def run_save_global(provider, key, endpoint):
             conf = load_config()
-            conf["provider"] = provider
             if provider == "OpenRouter":
                 conf["openrouter"]["key"] = key
                 conf["openrouter"]["endpoint"] = endpoint
@@ -279,10 +274,9 @@ def on_ui_tabs():
             
             save_config(conf)
             gr.Info(f"Local config for {provider} saved.")
-            return gr.update(interactive=False)
+            return gr.update(interactive=False), gr.update(value="✏️"), False
 
-        save_global_btn.click(fn=run_save_global, inputs=[provider_input, api_key_input, endpoint_input], outputs=[endpoint_input])
-        save_global_btn.click(fn=lambda: (gr.update(interactive=False), gr.update(value="✏️"), False), outputs=[endpoint_input, edit_endpoint_btn, endpoint_interactive_state])
+        save_global_btn.click(fn=run_save_global, inputs=[provider_input, api_key_input, endpoint_input], outputs=[endpoint_input, edit_endpoint_btn, endpoint_interactive_state])
 
         # Persona Lab Helpers
         def update_p_fields(name):
@@ -323,59 +317,52 @@ def on_ui_tabs():
         p_new.click(fn=lambda: ("", "", "", None), outputs=[p_name, p_desc, p_prompt, p_select])
 
         # Enhancer & Vision Logic
-        def run_enhance(prompt, person_name, model):
+        def run_enhance(prompt, person_name, model, provider):
             if not prompt: 
                 yield "Error: Provide an intent first."
                 return
             
             yield "Thinking... [ScribeNEO is formulating your enhanced prompt]"
             
-            # Persist last used model and persona
-            conf = load_config()
-            conf["last_enhancer_model"] = model
-            conf["last_enhancer_persona"] = person_name
-            save_config(conf)
-            
             ps = load_personas()
             p = next((x for x in ps if x['name'] == person_name), None)
             sys_prompt = p['system_prompt'] if p else ""
             
-            config = llm_service.get_config()
-            result = llm_service.enhance_prompt(prompt, sys_prompt, provider=config['provider'].lower().replace(" ",""), model=model)
+            result = llm_service.enhance_prompt(prompt, sys_prompt, provider=provider.lower().replace(" ",""), model=model)
             yield result
 
-        enhance_event = enhance_btn.click(fn=run_enhance, inputs=[raw_input, enhancer_persona, enhancer_model], outputs=[enhanced_output])
+        enhance_event = enhance_btn.click(fn=run_enhance, inputs=[raw_input, enhancer_persona, enhancer_model, provider_input], outputs=[enhanced_output])
         stop_enhance_btn.click(fn=None, cancels=[enhance_event])
         clear_enhance_btn.click(fn=lambda: "", outputs=[enhanced_output])
 
-        def run_vision(img, person_name, model):
+        def run_vision(img, person_name, model, provider):
             if not img:
                 yield "Error: Upload an image."
                 return
             
             yield "Thinking... [ScribeNEO is scanning your visuals]"
             
-            conf = load_config()
-            conf["last_vision_model"] = model
-            conf["last_vision_persona"] = person_name
-            save_config(conf)
-            
             ps = load_personas()
             p = next((x for x in ps if x['name'] == person_name), None)
             sys_prompt = p['system_prompt'] if p else None
             
-            result = tagging_service.interrogate_openrouter(img, model=model, system_prompt=sys_prompt)
+            result = tagging_service.interrogate(img, provider=provider.lower().replace(" ",""), model=model, system_prompt=sys_prompt)
             yield result
 
-        vision_event = tag_btn.click(fn=run_vision, inputs=[img_input, caption_persona, caption_model], outputs=[tag_output])
+        vision_event = tag_btn.click(fn=run_vision, inputs=[img_input, caption_persona, caption_model, provider_input], outputs=[tag_output])
         stop_vision_btn.click(fn=None, cancels=[vision_event])
         clear_vision_btn.click(fn=lambda: "", outputs=[tag_output])
+
+
+        # Passive handlers to ensure Gradio interactivity for JS-overridden buttons
+        for btn in [send_txt2img, send_img2img, copy_enhance_btn, vis_to_txt2img, vis_to_img2img, copy_vision_btn]:
+            btn.click(fn=None, _js="() => {}")
 
         # UI Utilities
         append_btn.click(fn=lambda x, y: f"{x}\n{y}" if x else y, inputs=[raw_input, tag_output], outputs=[raw_input])
         replace_btn.click(fn=lambda x: x, inputs=[tag_output], outputs=[raw_input])
 
-        # Initial UI Sync
+        # Initial UI Sync logic for API Keys only
         scribeneo_tab.load(fn=update_hub_fields, inputs=[provider_input], outputs=[api_key_input, endpoint_input])
 
     return [(scribeneo_tab, "ScribeNEO", "scribe_neo_tab")]

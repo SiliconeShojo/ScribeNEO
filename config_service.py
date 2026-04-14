@@ -7,9 +7,9 @@ import os
 import json
 from modules import shared
 
-# Extension root directory
-EXT_ROOT = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(EXT_ROOT, "config.json")
+# Extension root directory (Dynamic Resolution)
+EXT_ROOT = os.path.dirname(os.path.realpath(__file__))
+CONFIG_PATH = os.path.normpath(os.path.join(EXT_ROOT, "config.json"))
 
 def load_config():
     """
@@ -21,11 +21,6 @@ def load_config():
         dict: The complete configuration dictionary.
     """
     default_config = {
-        "provider": "OpenRouter",
-        "last_enhancer_model": "",
-        "last_vision_model": "",
-        "last_enhancer_persona": "None",
-        "last_vision_persona": "None",
         "openrouter": {
             "key": "",
             "endpoint": "https://openrouter.ai/api/v1"
@@ -43,8 +38,10 @@ def load_config():
         try:
             with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
                 saved = json.load(f)
-                # Simple deep merge for top-level dicts
+                # Simple deep merge for top-level dicts, skip legacy keys
                 for k, v in saved.items():
+                    if k == "provider":
+                        continue
                     if isinstance(v, dict) and k in default_config:
                         default_config[k].update(v)
                     else:
@@ -60,15 +57,12 @@ def load_config():
     legacy_prefixes = ["promptscribe_", "scribeneo_"]
     
     mapping = {
-        "provider": "provider",
         "openrouter_key": ("openrouter", "key"),
         "openrouter_endpoint": ("openrouter", "endpoint"),
-        "hf_token": ("huggingface", "key"), # Migrate token to key
+        "hf_token": ("huggingface", "key"),
         "hf_key": ("huggingface", "key"),
         "hf_endpoint": ("huggingface", "endpoint"),
-        "ollama_endpoint": ("ollama", "endpoint"),
-        "last_enhancer_model": "last_enhancer_model",
-        "last_vision_model": "last_vision_model"
+        "ollama_endpoint": ("ollama", "endpoint")
     }
 
     for prefix in legacy_prefixes:

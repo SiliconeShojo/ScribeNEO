@@ -9,6 +9,8 @@ import os
 import config_service
 from config_service import load_config
 
+DEFAULT_TEXT_MODEL = "google/gemini-2.0-flash-lite-preview-02-05:free"
+
 class LLMService:
     """
     Core service class for managing LLM interactions and configurations.
@@ -19,17 +21,13 @@ class LLMService:
     def get_config(self):
         """Bridge to centralized local config."""
         conf = load_config()
-        provider = conf.get("provider", "OpenRouter")
         
-        # Service-specific data extraction
         return {
-            "provider": provider,
             "openrouter_key": conf["openrouter"]["key"],
             "openrouter_endpoint": conf["openrouter"]["endpoint"],
             "hf_token": conf["huggingface"]["key"],
             "hf_endpoint": conf["huggingface"]["endpoint"],
-            "ollama_endpoint": conf["ollama"]["endpoint"],
-            "fav_model": conf.get("last_enhancer_model", "google/gemini-2.0-flash-lite-preview-02-05:free")
+            "ollama_endpoint": conf["ollama"]["endpoint"]
         }
 
     def call_openrouter(self, messages, model=None):
@@ -44,7 +42,7 @@ class LLMService:
             str: The AI's response content or an error message.
         """
         config = self.get_config()
-        target_model = model or config["fav_model"]
+        target_model = model or DEFAULT_TEXT_MODEL
         
         if not config["openrouter_key"]:
             return "Error: OpenRouter API Key not set."
@@ -280,7 +278,7 @@ class LLMService:
             return self.call_openrouter(messages, model)
         elif provider == "ollama":
             return self.call_ollama(messages, model or "llama3")
-        elif provider == "hf":
+        elif provider == "huggingface":
             return self.call_hf(messages, model or "mistralai/Mistral-7B-Instruct-v0.2")
         
         return "Error: Unknown provider."
