@@ -1,0 +1,313 @@
+/* ScribeNEO: Ultimate Dashboard Design System */
+
+:root {
+    --scribeneo-primary: #6366f1;
+    --scribeneo-secondary: #a855f7;
+    --scribeneo-accent: #f43f5e;
+    --scribeneo-bg-deep: rgba(15, 23, 42, 0.4);
+    --scribeneo-glass: rgba(255, 255, 255, 0.03);
+    --scribeneo-border: rgba(255, 255, 255, 0.08);
+}
+
+#scribe_neo_container {
+    padding: 24px;
+    background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+}
+
+#scribe_neo_container .gr-box {
+    border-radius: 12px;
+    border: 1px solid var(--scribeneo-border);
+    transition: all 0.2s ease-in-out;
+}
+
+#scribe_neo_container .gr-box:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+
+/* Engine Modules - FLEXIBLE SIZING */
+.scribeneo-module {
+    padding: 20px !important;
+    background: var(--scribeneo-bg-deep) !important;
+    border-top: 4px solid var(--scribeneo-primary) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    min-height: 850px !important;
+    /* Use min-height to prevent cutoff */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+}
+
+/* Engine Selection Row - IMPROVED ALIGNMENT */
+.scribeneo-engine-row {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+    margin-bottom: 8px !important;
+}
+
+.scribeneo-refresh-btn {
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+}
+
+.scribeneo-module h3 {
+    margin-top: 0;
+    font-weight: 800;
+    color: var(--scribeneo-primary);
+    border-bottom: 1px solid var(--scribeneo-border);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+/* Scrollable areas inside modules */
+.scribeneo-module .gr-form {
+    flex-grow: 1;
+    overflow-y: auto !important;
+    padding-right: 8px;
+}
+
+/* Balanced Spacing */
+.scribeneo-module .gr-form>* {
+    margin-bottom: 8px !important;
+}
+
+.scribeneo-image-container {
+    border: 2px solid var(--scribeneo-primary) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 12px !important;
+    padding: 10px !important;
+    margin-bottom: 15px !important;
+    height: 350px !important;
+    /* Fixed stable height */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease;
+}
+
+.scribeneo-image-container:hover {
+    border-color: var(--scribeneo-secondary) !important;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+/* Ensure the Gradio image component and the image itself adapt */
+.scribeneo-image-container .gr-image,
+.scribeneo-image-container img {
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 8px;
+}
+
+/* Action Rows & Bar - SPACING */
+.scribeneo-action-row,
+.scribeneo-action-bar {
+    margin-top: 10px !important;
+    gap: 8px !important;
+    display: flex !important;
+}
+
+/* Primary Action Buttons (ENHANCE / SCAN) */
+#scribeneo_main_enhance_btn,
+#scribeneo_decode_btn {
+    background: linear-gradient(135deg, var(--scribeneo-primary) 0%, var(--scribeneo-secondary) 100%) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 6px -1px var(--scribeneo-primary);
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+/* Utility Buttons (Stop, Copy, Clear) */
+#scribe_neo_container .gr-button:not(#scribeneo_main_enhance_btn):not(#scribeneo_decode_btn) {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--scribeneo-border) !important;
+    transition: all 0.2s;
+    min-width: 42px !important;
+    padding: 0 10px !important;
+}
+
+#scribe_neo_container #scribeneo_stop_enhance:hover,
+#scribe_neo_container #scribeneo_stop_vision:hover {
+    border-color: var(--scribeneo-accent) !important;
+    color: var(--scribeneo-accent) !important;
+    background: rgba(244, 63, 94, 0.1) !important;
+}
+
+#scribe_neo_container #scribeneo_copy_enhance:hover,
+#scribe_neo_container #scribeneo_copy_vision:hover {
+    border-color: var(--scribeneo-primary) !important;
+    color: var(--scribeneo-primary) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+#scribe_neo_container #scribeneo_clear_enhance:hover,
+#scribe_neo_container #scribeneo_clear_vision:hover {
+    border-color: orange !important;
+    color: orange !important;
+    background: rgba(255, 165, 0, 0.1) !important;
+}
+
+/* Processing State - Isolated Orange Border */
+#scribeneo_main_result.scribeneo-active,
+#scribeneo_vision_result.scribeneo-active,
+#scribeneo_main_result.scribeneo-active *:not(textarea),
+#scribeneo_vision_result.scribeneo-active *:not(textarea) {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+#scribeneo_main_result.scribeneo-active textarea,
+#scribeneo_vision_result.scribeneo-active textarea {
+    border: 2px solid orange !important;
+    box-shadow: 0 0 14px rgba(255, 165, 0, 0.4) !important;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+/* Configuration Row alignment */
+.scribeneo-config-row {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+}
+
+#scribeneo_reveal_api,
+#scribeneo_edit_endpoint {
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+}
+
+/* Scribe Hub Handbook Panel */
+#scribeneo_hub_filler {
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid var(--scribeneo-border) !important;
+    border-radius: 12px;
+    min-height: 250px;
+    padding: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+.scribeneo-handbook h3 {
+    color: var(--scribeneo-primary) !important;
+    font-size: 1.1rem !important;
+    margin-top: 0 !important;
+    margin-bottom: 15px !important;
+}
+
+.scribeneo-handbook li {
+    font-size: 0.95rem !important;
+    margin-bottom: 12px !important;
+    line-height: 1.6 !important;
+    opacity: 0.95;
+}
+
+.scribeneo-handbook li::marker {
+    color: var(--scribeneo-primary) !important;
+}
+
+/* Premium Inputs */
+#scribe_neo_container textarea,
+#scribe_neo_container input[type="text"] {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid var(--scribeneo-border) !important;
+    border-radius: 8px !important;
+    resize: none !important;
+}
+
+/* Scribe Tip Cards (Intelligence Box) */
+.scribeneo-tip-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid var(--scribeneo-border) !important;
+    border-left: 4px solid var(--scribeneo-primary) !important;
+    border-radius: 8px !important;
+    padding: 15px 20px !important;
+    margin-top: 15px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: all 0.3s ease;
+}
+
+.scribeneo-tip-card:hover {
+    background: rgba(99, 102, 241, 0.08) !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.scribeneo-tip-card h3 {
+    font-size: 1.1rem !important;
+    color: var(--scribeneo-primary) !important;
+    margin-top: 0 !important;
+    margin-bottom: 15px !important;
+    border: none !important;
+    padding: 0 !important;
+    letter-spacing: 1px;
+}
+
+.scribeneo-tip-card p, .scribeneo-tip-card strong, .scribeneo-tip-card li {
+    font-size: 0.95rem !important;
+    margin: 0 !important;
+    line-height: 1.6 !important;
+    opacity: 0.95;
+}
+
+.scribeneo-tip-card ul {
+    margin: 0 0 0 20px !important;
+    padding: 0 !important;
+}
+
+.scribeneo-tip-card li {
+    margin-bottom: 12px !important;
+}
+
+.scribeneo-tip-card li::marker {
+    color: var(--scribeneo-primary);
+}
+
+/* Fix Result Textbox Overflow - Aggressive Svelte/Gradio Override */
+#scribeneo_main_result,
+#scribeneo_vision_result {
+    max-height: 220px !important;
+    min-height: 120px !important;
+    overflow: hidden !important;
+}
+
+#scribeneo_main_result>label,
+#scribeneo_vision_result>label {
+    max-height: 220px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#scribeneo_main_result textarea,
+#scribeneo_vision_result textarea {
+    max-height: 200px !important;
+    min-height: 100px !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    flex-grow: 1 !important;
+}
+
+/* Ensure the module's form area keeps buttons reachable */
+.scribeneo-module .gr-form {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
