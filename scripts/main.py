@@ -12,7 +12,7 @@ import gradio as gr
 scripts_dir = os.path.dirname(os.path.abspath(__file__))
 ext_root = os.path.dirname(scripts_dir)
 if ext_root not in sys.path:
-    sys.path.insert(0, ext_root)
+    sys.path.append(ext_root)
 
 from modules import scripts, script_callbacks, shared
 
